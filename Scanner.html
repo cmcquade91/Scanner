@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>Part Validator</title>
+    <!-- This script handles the camera and 2D matrix decoding -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { 
+            font-family: -apple-system, sans-serif; 
+            text-align: center; 
+            transition: background-color 0.2s; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #1a1a1a; 
+            color: white; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #reader { 
+            width: 100%; 
+            max-width: 400px; 
+            margin: 0 auto; 
+            background: black; 
+            border-radius: 15px; 
+            overflow: hidden;
+            border: 2px solid #444;
+        }
+        #status-box { 
+            margin-top: 20px; 
+            padding: 30px; 
+            border-radius: 15px; 
+            font-size: 1.8em; 
+            font-weight: bold;
+            text-transform: uppercase;
+            border: 4px solid rgba(255,255,255,0.1);
+        }
+        /* Color States */
+        .ok { background-color: #2e7d32 !important; }      /* Green */
+        .bad { background-color: #d32f2f !important; }     /* Red */
+        .unknown { background-color: #f57c00 !important; } /* Orange */
+        .neutral { background-color: #1a1a1a; }            /* Dark Grey */
+        
+        #part-number { font-size: 0.6em; display: block; margin-top: 10px; opacity: 0.8; }
+    </style>
+</head>
+<body class="neutral">
+
+    <h2>PART VALIDATOR</h2>
+    
+    <div id="reader"></div>
+    
+    <div id="status-box">
+        <span id="message">Ready to Scan</span>
+        <span id="part-number">---</span>
+    </div>
+
+    <script>
+        // ==========================================
+        // STEP 1: ADD YOUR PART NUMBERS HERE
+        // ==========================================
+        const goodParts = [
+            "0117A25349231335 MB3Q 6050 BB",
+            "GOOD456",
+            "PART-A789"
+        ];
+
+        const badParts = [
+            "BAD001",
+            "REJECT-99",
+            "SCRAP-55"
+        ];
+        // ==========================================
+
+        const body = document.body;
+        const msg = document.getElementById('message');
+        const partDisp = document.getElementById('part-number');
+        let isProcessing = false;
+
+        function onScanSuccess(decodedText) {
+            if (isProcessing) return; // Prevent double-scans
+            isProcessing = true;
+
+            const code = decodedText.trim();
+            partDisp.innerText = "Scanned: " + code;
+
+            if (goodParts.includes(code)) {
+                body.className = 'ok';
+                msg.innerText = "PASS: GOOD PART";
+            } 
+            else if (badParts.includes(code)) {
+                body.className = 'bad';
+                msg.innerText = "FAIL: KNOWN BAD";
+            } 
+            else {
+                body.className = 'unknown';
+                msg.innerText = "NOT IN LIST";
+            }
+
+            // Reset the screen after 2.5 seconds so you can scan the next part
+            setTimeout(() => {
+                body.className = 'neutral';
+                msg.innerText = "Ready to Scan";
+                partDisp.innerText = "---";
+                isProcessing = false;
+            }, 2500);
+        }
+
+        const html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 15, qrbox: { width: 250, height: 250 } }, 
+            onScanSuccess
+        );
+    </script>
+</body>
+</html>
